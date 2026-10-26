@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Varèle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<style>
+:root{--bg:#fff;--ink:#16161a;--mute:#76736d;--line:#e8e5e0;--soft:#f5f3f0;--navy:#1f2a44}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "DM Sans",system-ui,sans-serif}
+h1,h2,.logo{font-family:"Cormorant Garamond",Georgia,serif;font-weight:600}
+button{font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
+.bar{background:var(--navy);color:#fff;text-align:center;font-size:.85rem;padding:.5rem 1rem}
+header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5}
+.logo{font-size:2rem;letter-spacing:.03em;line-height:1}
+#bagbtn{background:none;border:1px solid var(--line);padding:.5rem 1rem;border-radius:2px;color:var(--ink)}
+.hero{padding:4.5rem 1.25rem 3.5rem;max-width:760px;margin:0 auto}
+.hero h1{font-size:clamp(2.6rem,9vw,4.6rem);line-height:1;margin:0 0 1rem;font-weight:500}
+.hero h1 i{font-weight:500}
+.hero p{color:var(--mute);max-width:34ch;margin:0 0 1.75rem}
+.btn{background:var(--navy);color:#fff;border:0;padding:.85rem 1.6rem;border-radius:2px;text-decoration:none;display:inline-block}
+.btn.sm{padding:.55rem 1rem;width:100%;margin-top:.6rem}
+.tools{max-width:1100px;margin:0 auto;padding:0 1.25rem 1.25rem;display:flex;gap:1rem;align-items:baseline;justify-content:space-between;flex-wrap:wrap}
+.tools h2{font-size:1.8rem;margin:0}
+#q{padding:.6rem .8rem;border:1px solid var(--line);border-radius:2px;font:inherit;min-width:12rem;background:transparent;color:var(--ink)}
+.chips{max-width:1100px;margin:0 auto;padding:0 1.25rem 1.25rem;display:flex;gap:.5rem;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:none;color:var(--ink);padding:.45rem 1rem;border-radius:999px}
+.chip[aria-pressed=true]{background:var(--navy);border-color:var(--navy);color:#fff}
+.grid{max-width:1100px;margin:0 auto;padding:0 1.25rem 4rem;display:grid;grid-template-columns:repeat(2,1fr);gap:1.5rem 1rem}
+@media(min-width:760px){.grid{grid-template-columns:repeat(4,1fr)}}
+.card a.lk{color:inherit;text-decoration:none;display:block}
+.card img{width:100%;aspect-ratio:1;object-fit:cover;background:var(--soft);display:block}
+.card h3{font-size:.95rem;font-weight:400;margin:.6rem 0 .1rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card .pr{font-weight:500}
+.empty{grid-column:1/-1;color:var(--mute)}
+footer{border-top:1px solid var(--line);padding:2rem 1.25rem;text-align:center;color:var(--mute);font-size:.9rem}
+#veil{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9}
+#drawer{position:fixed;top:0;right:0;bottom:0;width:min(420px,100%);background:var(--bg);z-index:10;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .25s}
+#drawer.open{transform:none}
+@media(prefers-reduced-motion:reduce){#drawer{transition:none}}
+.dh{display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;border-bottom:1px solid var(--line)}
+.dh h2{margin:0;font-size:1.5rem}
+.dh button{background:none;border:0;font-size:1.6rem;color:var(--ink)}
+#items{flex:1;overflow:auto;padding:0 1.25rem}
+.it{display:grid;grid-template-columns:56px 1fr auto;gap:.8rem;align-items:center;padding:.8rem 0;border-bottom:1px solid var(--line);font-size:.9rem}
+.it img{width:56px;height:56px;object-fit:cover;background:var(--soft)}
+.it button{background:none;border:0;color:var(--mute);text-decoration:underline;padding:0;font-size:.85rem}
+.df{padding:1.25rem;border-top:1px solid var(--line)}
+.tot{display:flex;justify-content:space-between;font-weight:500;margin-bottom:.8rem}
+.df small{color:var(--mute);display:block;margin-top:.6rem}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="bar">Orders are confirmed by email within 24 hours</div>
+<header>
+  <span class="logo">Varèle</span>
+  <button id="bagbtn" aria-label="Open bag">Bag (<span id="cnt">0</span>)</button>
+</header>
+
+<section class="hero">
+  <h1>Chosen with <i>care</i>, delivered to you.</h1>
+  <p>A small, considered collection, added to as we find pieces worth keeping.</p>
+  <a class="btn" href="#shop">Shop the collection</a>
+</section>
+
+<div class="tools" id="shop">
+  <h2>The collection</h2>
+  <input id="q" type="search" placeholder="Search" aria-label="Search products">
+</div>
+<div class="chips" id="chips" hidden></div>
+<div class="grid" id="grid"><p class="empty">Loading…</p></div>
+
+<footer>© Varèle · orders@varele.com</footer>
+
+<div id="veil" hidden></div>
+<aside id="drawer" aria-label="Your bag">
+  <div class="dh"><h2>Your bag</h2><button id="close" aria-label="Close bag">×</button></div>
+  <div id="items"></div>
+  <div class="df">
+    <div class="tot"><span>Total</span><span id="total">$0.00</span></div>
+    <a class="btn" id="order" style="display:block;text-align:center" href="#">Send order by email</a>
+    <small>Your email app opens with the order filled in. We reply with an invoice.</small>
+  </div>
+</aside>
+
+<script>
+const sb = supabase.createClient("https://hbejflabmnfvyvxltdxe.supabase.co","sb_publishable_aO_8S0I1kq0IRerRNrDWoA_8gfbvbX_");
+const $ = id => document.getElementById(id);
+const money = n => "$" + Number(n).toFixed(2);
+let products = [], cats = [], current = "all", bag = [];
+try { bag = JSON.parse(localStorage.getItem("varele-bag")||"[]"); } catch(e){}
+
+function el(tag, props={}, ...kids){ const e = document.createElement(tag); Object.assign(e, props); e.append(...kids); return e; }
+
+function render(){
+  const term = $("q").value.trim().toLowerCase();
+  const list = products.filter(p => (current === "all" || p.catalogue_id === current) && p.name.toLowerCase().includes(term));
+  const g = $("grid"); g.innerHTML = "";
+  if(!list.length){ g.append(el("p",{className:"empty",textContent: products.length ? "Nothing matches that search." : "New pieces are on their way."})); return; }
+  for(const p of list){
+    const card = el("div",{className:"card"});
+    const img = el("img",{alt:p.name,loading:"lazy"}); if(p.image_url) img.src = p.image_url;
+    const add = el("button",{className:"btn sm",textContent:"Add to bag"}); add.onclick = () => addToBag(p);
+    const link = el("a",{className:"lk",href:"product.html?id="+encodeURIComponent(p.id)}, img, el("h3",{textContent:p.name}), el("div",{className:"pr",textContent:money(p.sell_price)}));
+    link.setAttribute("aria-label", p.name + ", " + money(p.sell_price) + ". View details");
+    card.append(link, add);
+    g.append(card);
+  }
+}
+
+function drawChips(){
+  const used = cats.filter(c => products.some(p => p.catalogue_id === c.id));
+  const box = $("chips"); box.innerHTML = "";
+  box.hidden = used.length < 2;
+  if(box.hidden) { current = "all"; return; }
+  for(const c of [{id:"all",name:"All"}, ...used]){
+    const b = el("button",{className:"chip",textContent:c.name}); b.setAttribute("aria-pressed", String(c.id === current));
+    b.onclick = () => { current = c.id; drawChips(); render(); };
+    box.append(b);
+  }
+}
+function save(){ try{ localStorage.setItem("varele-bag", JSON.stringify(bag)); }catch(e){} }
+function addToBag(p){
+  const f = bag.find(i => i.id === p.id);
+  if(f) f.qty++; else bag.push({id:p.id,name:p.name,price:Number(p.sell_price),image:p.image_url,qty:1});
+  save(); drawBag(); openBag();
+}
+function drawBag(){
+  $("cnt").textContent = bag.reduce((s,i)=>s+i.qty,0);
+  const box = $("items"); box.innerHTML = "";
+  if(!bag.length) box.append(el("p",{className:"empty",textContent:"Your bag is empty."}));
+  for(const i of bag){
+    const img = el("img",{alt:""}); if(i.image) img.src = i.image;
+    const rm = el("button",{textContent:"Remove"}); rm.onclick = () => { bag = bag.filter(x=>x!==i); save(); drawBag(); };
+    box.append(el("div",{className:"it"}, img, el("div",{}, el("div",{textContent:i.name}), el("small",{textContent:i.qty+" × "+money(i.price)}), el("div",{}, rm)), el("div",{textContent:money(i.qty*i.price)})));
+  }
+  const total = bag.reduce((s,i)=>s+i.qty*i.price,0);
+  $("total").textContent = money(total);
+  const body = "Hello Varèle,\n\nI would like to order:\n\n" + bag.map(i=>i.qty+" × "+i.name+" — "+money(i.qty*i.price)).join("\n") + "\n\nTotal: "+money(total)+"\n\nName:\nDelivery address:\nPhone:\n";
+  $("order").href = bag.length ? "mailto:orders@varele.com?subject="+encodeURIComponent("New order")+"&body="+encodeURIComponent(body) : "#";
+}
+const openBag = () => { $("drawer").classList.add("open"); $("veil").hidden = false; };
+const closeBag = () => { $("drawer").classList.remove("open"); $("veil").hidden = true; };
+$("bagbtn").onclick = openBag; $("close").onclick = closeBag; $("veil").onclick = closeBag;
+document.addEventListener("keydown", e => { if(e.key==="Escape") closeBag(); });
+$("q").oninput = render;
+
+(async () => {
+  cats = (await sb.from("catalogues").select("id,name").order("name")).data || [];
+  const { data, error } = await sb.from("products").select("id,name,image_url,sell_price,catalogue_id").eq("active",true).not("sell_price","is",null).order("created_at",{ascending:false});
+  if(error){ $("grid").innerHTML = ""; $("grid").append(el("p",{className:"empty",textContent:"The collection can't load right now. Please try again shortly."})); }
+  else { products = data; drawChips(); render(); }
+  drawBag();
+  if(location.hash === "#bag") openBag();
+})();
+
+// Coming back from a product page: pick up anything added there
+function syncBag(){ try { bag = JSON.parse(localStorage.getItem("varele-bag")||"[]"); } catch(e){ bag = []; } drawBag(); }
+window.addEventListener("pageshow", e => { if(e.persisted) syncBag(); });
+window.addEventListener("hashchange", () => { if(location.hash === "#bag"){ syncBag(); openBag(); } });
+</script>
+</body>
+</html>

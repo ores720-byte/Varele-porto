@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign In · Varèle Atelier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<style>
+:root{--bg:#fff;--ink:#16161a;--mute:#76736d;--line:#e8e5e0;--soft:#f5f3f0;--navy:#1f2a44}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "DM Sans",system-ui,sans-serif}
+h1,.logo{font-family:"Cormorant Garamond",Georgia,serif;font-weight:600}
+button{font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
+.bar{background:var(--navy);color:#fff;text-align:center;font-size:.85rem;padding:.5rem 1rem}
+header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5}
+.logo{font-size:2rem;letter-spacing:.03em;line-height:1;text-decoration:none;color:var(--ink)}
+.header-actions{display:flex;gap:.75rem;align-items:center}
+.action-btn{background:none;border:1px solid var(--line);padding:.5rem 1rem;border-radius:2px;color:var(--ink);text-decoration:none;font-size:.9rem;display:inline-flex;align-items:center;gap:.4rem}
+.action-btn:hover{border-color:var(--navy)}
+
+.auth-container{max-width:440px;margin:4rem auto;padding:0 1.25rem}
+.auth-box{border:1px solid var(--line);padding:2.5rem 2rem;border-radius:4px;background:var(--bg)}
+.auth-box h1{font-size:2.2rem;margin:0 0 .5rem;font-weight:500}
+.auth-box p{color:var(--mute);margin:0 0 2rem;font-size:.95rem}
+
+.btn-google{width:100%;background:#fff;color:var(--ink);border:1px solid var(--line);padding:.8rem 1rem;border-radius:2px;display:flex;align-items:center;justify-content:center;gap:.75rem;font-weight:500;font-size:.95rem;transition:border-color .2s}
+.btn-google:hover{border-color:var(--navy)}
+.btn-google svg{width:18px;height:18px}
+
+.divider{display:flex;align-items:center;text-align:center;color:var(--mute);margin:1.5rem 0;font-size:.85rem}
+.divider::before, .divider::after{content:'';flex:1;border-bottom:1px solid var(--line)}
+.divider::before{margin-right:.75rem}
+.divider::after{margin-left:.75rem}
+
+.form-group{margin-bottom:1.25rem}
+.form-group label{display:block;font-size:.85rem;font-weight:500;margin-bottom:.4rem}
+.form-control{width:100%;padding:.75rem .9rem;border:1px solid var(--line);border-radius:2px;font:inherit;background:transparent;color:var(--ink)}
+.form-control:focus{border-color:var(--navy)}
+
+.btn{background:var(--navy);color:#fff;border:0;padding:.85rem 1.6rem;border-radius:2px;text-decoration:none;display:block;width:100%;text-align:center;font-weight:500;margin-top:1.5rem}
+.btn:hover{opacity:.9}
+
+.auth-switch{text-align:center;margin-top:1.5rem;font-size:.9rem;color:var(--mute)}
+.auth-switch a{color:var(--ink);text-decoration:underline}
+
+.message{padding:.75rem;border-radius:2px;font-size:.9rem;margin-bottom:1.25rem;display:none}
+.message.error{background:#fdf2f2;color:#a91d1d;border:1px solid #f9dad5;display:block}
+.message.success{background:#f0fdf4;color:#166534;border:1px solid #dcfce7;display:block}
+
+footer{border-top:1px solid var(--line);padding:2rem 1.25rem;text-align:center;color:var(--mute);font-size:.9rem;margin-top:6rem}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="bar">Orders are confirmed by email within 24 hours</div>
+<header>
+  <a href="varele-store.html" class="logo">Varèle</a>
+  <div class="header-actions">
+    <a href="varele-auth.html" id="auth-link" class="action-btn"><i class="ri-user-3-fill"></i> Sign In</a>
+    <a href="varele-store.html#bag" class="action-btn" aria-label="Open bag"><i class="ri-shopping-bag-4-line"></i> Bag</a>
+  </div>
+</header>
+
+<main class="auth-container">
+  <div class="auth-box">
+    <h1 id="form-title">Sign In</h1>
+    <p id="form-subtitle">Access your client account or continue securely with Google.</p>
+
+    <div id="alert-box" class="message"></div>
+
+    <!-- Google OAuth Button -->
+    <button type="button" id="google-btn" class="btn-google">
+      <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.13 0-5.78-2.11-6.73-4.96H1.18v3.15C3.15 21.32 7.23 24 12 24z"/><path fill="#FBBC05" d="M5.27 14.24c-.25-.72-.38-1.49-.38-2.24s.13-1.52.38-2.24V6.61H1.18C.43 8.13 0 9.87 0 11.7s.43 3.57 1.18 5.09l4.09-2.55z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.23 0 3.15 2.68 1.18 6.61l4.09 3.15c.95-2.85 3.6-4.96 6.73-4.96z"/></svg>
+      Continue with Google
+    </button>
+
+    <div class="divider">or with email</div>
+
+    <form id="auth-form">
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" class="form-control" required placeholder="name@example.com">
+      </div>
+      
+      <div class="form-group" id="password-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" class="form-control" placeholder="••••••••">
+      </div>
+
+      <button type="submit" id="submit-btn" class="btn">Continue with Email</button>
+    </form>
+
+    <div class="auth-switch">
+      <span id="switch-text">Don't have an account?</span> 
+      <a href="#" id="toggle-mode">Create account</a>
+    </div>
+  </div>
+</main>
+
+<footer>© Varèle · orders@varele.com</footer>
+
+<script>
+const sb = supabase.createClient("https://hbejflabmnfvyvxltdxe.supabase.co","sb_publishable_aO_8S0I1kq0IRerRNrDWoA_8gfbvbX_");
+const $ = id => document.getElementById(id);
+
+let isSignUp = false;
+
+// Check existing session on load
+async function initAuth() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    $("form-title").textContent = "Your Account";
+    $("form-subtitle").textContent = "You are currently signed in as " + session.user.email;
+    $("google-btn").style.display = "none";
+    document.querySelector(".divider").style.display = "none";
+    $("auth-form").innerHTML = '<button type="button" id="signout-btn" class="btn">Sign Out</button>';
+    $("auth-link").innerHTML = '<i class="ri-user-3-fill"></i> Account';
+    
+    $("signout-btn").onclick = async () => {
+      await sb.auth.signOut();
+      location.reload();
+    };
+  }
+}
+
+// Google Sign-In Handler
+$("google-btn").onclick = async () => {
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: window.location.origin + '/varele-store.html'
+    }
+  });
+  if (error) {
+    const alertBox = $("alert-box");
+    alertBox.className = "message error";
+    alertBox.textContent = error.message;
+  }
+};
+
+// Toggle between Sign In and Sign Up modes
+$("toggle-mode").onclick = (e) => {
+  e.preventDefault();
+  isSignUp = !isSignUp;
+  if(isSignUp) {
+    $("form-title").textContent = "Create Account";
+    $("form-subtitle").textContent = "Set up your Varèle client profile.";
+    $("submit-btn").textContent = "Register Account";
+    $("switch-text").textContent = "Already have an account?";
+    $("toggle-mode").textContent = "Sign in";
+  } else {
+    $("form-title").textContent = "Sign In";
+    $("form-subtitle").textContent = "Access your client account or continue securely with Google.";
+    $("submit-btn").textContent = "Continue with Email";
+    $("switch-text").textContent = "Don't have an account?";
+    $("toggle-mode").textContent = "Create account";
+  }
+  $("alert-box").className = "message";
+  $("alert-box").textContent = "";
+};
+
+// Handle Form Submission
+$("auth-form").onsubmit = async (e) => {
+  e.preventDefault();
+  const email = $("email").value.trim();
+  const password = $("password").value;
+  const alertBox = $("alert-box");
+  
+  alertBox.className = "message";
+  alertBox.textContent = "";
+
+  if(isSignUp) {
+    const { data, error } = await sb.auth.signUp({ email, password });
+    if(error) {
+      alertBox.className = "message error";
+      alertBox.textContent = error.message;
+    } else {
+      alertBox.className = "message success";
+      alertBox.textContent = "Registration successful! Please check your email to confirm your account.";
+    }
+  } else {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if(error) {
+      alertBox.className = "message error";
+      alertBox.textContent = error.message;
+    } else {
+      alertBox.className = "message success";
+      alertBox.textContent = "Signed in successfully. Redirecting...";
+      setTimeout(() => { location.href = "varele-store.html"; }, 1000);
+    }
+  }
+};
+
+initAuth();
+</script>
+</body>
+</html>

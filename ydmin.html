@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Varèle Atelier — Executive Management</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<style>
+:root {
+  --bg: #faf9f6;
+  --panel: #ffffff;
+  --ink: #111111;
+  --mute: #787571;
+  --line: #e8e5e0;
+  --navy: #192231;
+  --navy-hover: #263347;
+  --gold: #c5a059;
+  --err: #9a2b2b;
+  --ok: #286445;
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+@media(prefers-color-scheme: dark) {
+  :root {
+    --bg: #111111;
+    --panel: #1a1a1a;
+    --ink: #f4f2ed;
+    --mute: #99948d;
+    --line: #2a2927;
+    --navy: #e0d8cc;
+    --navy-hover: #ffffff;
+    --gold: #d4af37;
+    --err: #e57373;
+    --ok: #81c784;
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 "DM Sans", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { font-family: "Cormorant Garamond", Georgia, serif; font-weight: 500; letter-spacing: 0.03em; margin: 0; }
+h1 { font-size: 2.2rem; }
+h2 { font-size: 1.4rem; margin-bottom: 0.5rem; }
+
+main { max-width: 960px; margin: 0 auto; padding: 2.5rem 1.5rem 5rem; }
+header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); padding-bottom: 1.5rem; margin-bottom: 2rem; }
+.logo-mark { text-transform: uppercase; letter-spacing: 0.25em; font-size: 1.1rem; font-weight: 600; }
+
+label { display: block; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--mute); margin: 0.8rem 0 0.3rem; }
+input, select, textarea { width: 100%; padding: 0.7rem 0.85rem; border: 1px solid var(--line); background: var(--panel); color: var(--ink); font: inherit; border-radius: 4px; transition: border-color 0.2s; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--navy); }
+
+button { font: inherit; cursor: pointer; padding: 0.7rem 1.3rem; border: 1px solid var(--navy); background: var(--navy); color: var(--bg); border-radius: 4px; font-weight: 500; transition: all 0.2s; }
+button:hover { background: var(--navy-hover); border-color: var(--navy-hover); }
+button.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+button.ghost:hover { border-color: var(--navy); background: rgba(0,0,0,0.02); }
+button:disabled { opacity: 0.4; cursor: wait; }
+
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 1.75rem; margin-bottom: 2rem; box-shadow: var(--shadow); }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.grid-3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 1rem; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+
+.msg { margin-top: 1rem; min-height: 1.2rem; font-size: 0.9rem; font-weight: 500; }
+.err { color: var(--err); } .ok { color: var(--ok); }
+
+/* Navigation Tabs */
+.tab-bar { display: flex; gap: 1.25rem; border-bottom: 1px solid var(--line); margin-bottom: 1.5rem; }
+.tab-btn { background: none; border: none; border-bottom: 2px solid transparent; color: var(--mute); border-radius: 0; padding: 0.6rem 0.2rem; font-family: "Cormorant Garamond", serif; font-size: 1.25rem; }
+.tab-btn.active { color: var(--ink); border-bottom-color: var(--navy); font-weight: 600; }
+.tab-btn:hover { background: transparent; color: var(--ink); }
+
+/* Diagnostics & Metric Widgets */
+.metric-card { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 1rem 1.25rem; text-align: center; }
+.metric-val { font-size: 1.8rem; font-family: "Cormorant Garamond", Georgia, serif; font-weight: 600; margin-top: 0.2rem; }
+.metric-status { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #ccc; margin-right: 0.4rem; }
+.metric-status.online { background: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.4); }
+.metric-status.offline { background: var(--err); }
+
+.console-box { font-family: "Courier New", Courier, monospace; font-size: 0.82rem; background: #0d1117; color: #58a6ff; padding: 1rem; border-radius: 6px; min-height: 120px; max-height: 240px; overflow-y: auto; white-space: pre-wrap; line-height: 1.4; border: 1px solid var(--line); }
+
+/* Bulk Actions Toolbar */
+.bulk-bar { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; padding: 0.8rem 1rem; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; margin-bottom: 1.25rem; position: sticky; top: 10px; z-index: 5; box-shadow: var(--shadow); }
+.bulk-bar select { width: auto; max-width: 160px; padding: 0.45rem 0.6rem; }
+.bulk-bar button { padding: 0.45rem 0.85rem; font-size: 0.85rem; }
+
+/* Product Row Items */
+.product-item { display: grid; grid-template-columns: 60px 1fr; gap: 1rem; padding: 1.1rem; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; margin-bottom: 0.75rem; transition: border-color 0.2s; }
+.product-item:hover { border-color: #c8c5be; }
+.product-item img { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; background: var(--line); }
+.product-title { font-weight: 500; font-size: 0.95rem; line-height: 1.3; margin-bottom: 0.2rem; }
+.product-meta { font-size: 0.82rem; color: var(--mute); display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+.product-controls { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; border-top: 1px solid var(--line); padding-top: 0.75rem; margin-top: 0.25rem; }
+.product-controls input[type=number] { width: 6.5rem; padding: 0.4rem 0.6rem; }
+.product-controls select { width: auto; padding: 0.4rem 0.6rem; }
+.product-controls button { padding: 0.4rem 0.8rem; font-size: 0.85rem; }
+
+.check-label { display: flex; align-items: center; gap: 0.4rem; cursor: pointer; font-size: 0.85rem; color: var(--ink); text-transform: none; margin: 0; }
+.check-label input { width: auto; cursor: pointer; }
+.badge { font-size: 0.75rem; padding: 0.15rem 0.4rem; border-radius: 3px; background: var(--line); color: var(--ink); text-transform: uppercase; font-weight: 500; }
+.badge.sync { background: var(--gold); color: #fff; }
+
+[hidden] { display: none !important; }
+@media(max-width: 700px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .product-controls { flex-direction: column; align-items: stretch; }
+  .product-controls input[type=number], .product-controls select { width: 100%; }
+}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <div class="logo-mark">Varèle</div>
+      <small style="color:var(--mute)">Executive Catalog & Network Management</small>
+    </div>
+    <button class="ghost" id="out" hidden>Sign out</button>
+  </header>
+
+  <!-- Login Form -->
+  <div id="login" class="card" style="max-width:400px; margin: 3rem auto;">
+    <h2>Admin Sign In</h2>
+    <label for="em">Email</label>
+    <input id="em" type="email" autocomplete="username">
+    <label for="pw">Password</label>
+    <input id="pw" type="password" autocomplete="current-password">
+    <p style="margin-top:1.5rem"><button id="go" style="width:100%">Authenticate</button></p>
+    <div class="msg" id="lmsg" role="status"></div>
+  </div>
+
+  <!-- Main App Dashboard -->
+  <div id="app" hidden>
+
+    <!-- Navigation Tabs -->
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tab-all" onclick="switchTab('all')">All Products</button>
+      <button class="tab-btn" id="tab-staged" onclick="switchTab('staged')">Recently Synced <span id="staged-count" class="badge sync" hidden>0</span></button>
+      <button class="tab-btn" id="tab-net" onclick="switchTab('net')">Connection & Network Diagnostics</button>
+    </div>
+
+    <!-- TAB 1 & 2: CATALOG MANAGEMENT & SYNC -->
+    <div id="view-catalog">
+      <!-- CJ Synchronization Card -->
+      <div class="card">
+        <h2>Sync Products from CJ Dropshipping</h2>
+        <div class="grid-3">
+          <div>
+            <label for="q">Search Query</label>
+            <input id="q" placeholder="e.g. Luxury Watches, Leather Bags">
+          </div>
+          <div>
+            <label for="mk">Markup Multiplier</label>
+            <input id="mk" type="number" step="0.1" min="1" value="2.0">
+          </div>
+          <div>
+            <label for="n">Count (Max 100)</label>
+            <input id="n" type="number" min="1" max="100" value="20">
+          </div>
+        </div>
+        <div class="grid-2">
+          <div>
+            <label for="pg">Page</label>
+            <input id="pg" type="number" min="1" value="1">
+          </div>
+          <div>
+            <label for="cat">Target Catalogue (Optional)</label>
+            <input id="cat" placeholder="Leave empty for query name">
+          </div>
+        </div>
+        <p style="margin-top:1.25rem; display:flex; gap:0.75rem;">
+          <button id="sync">Execute CJ Sync</button>
+          <button class="ghost" id="fill">Auto-Fill Missing Media & Details</button>
+        </p>
+        <div class="msg" id="smsg" role="status"></div>
+      </div>
+
+      <!-- Bulk Operations Toolbar -->
+      <div class="bulk-bar">
+        <label class="check-label"><input type="checkbox" id="all"> Select All</label>
+        <span id="selcount" style="font-size:0.85rem; color:var(--mute); margin-right:auto;">0 selected</span>
+        <button class="ghost" id="bshow">Publish (Visible)</button>
+        <button class="ghost" id="bhide">Unpublish (Hide)</button>
+        <select id="bcat" aria-label="Move selected to catalogue"></select>
+        <button class="ghost" id="bmove">Move</button>
+        <button class="ghost" id="bdet">Enrich Details</button>
+        <button class="ghost" id="bdel" style="color:var(--err)">Delete</button>
+      </div>
+      <div class="msg" id="bmsg" role="status"></div>
+
+      <!-- Products Container -->
+      <div id="list"><p style="color:var(--mute)">Loading product library…</p></div>
+    </div>
+
+    <!-- TAB 3: CONNECTION & NETWORK DIAGNOSTICS -->
+    <div id="view-net" hidden>
+      <!-- Real-time Latency & Status Metrics -->
+      <div class="grid-4" style="margin-bottom: 1.5rem;">
+        <div class="metric-card">
+          <label>Supabase DB Latency</label>
+          <div class="metric-val" id="val-db-ping">-- ms</div>
+          <small><span class="metric-status" id="dot-db"></span><span id="txt-db">Not tested</span></small>
+        </div>
+        <div class="metric-card">
+          <label>CJ Edge Function</label>
+          <div class="metric-val" id="val-cj-ping">-- ms</div>
+          <small><span class="metric-status" id="dot-cj"></span><span id="txt-cj">Not tested</span></small>
+        </div>
+        <div class="metric-card">
+          <label>Connection Speed</label>
+          <div class="metric-val" id="val-net-speed">-- Mbps</div>
+          <small id="txt-net-type">Detecting API...</small>
+        </div>
+        <div class="metric-card">
+          <label>Pipeline Status</label>
+          <div class="metric-val" id="val-pipe-status">Idle</div>
+          <small id="txt-pipe-detail">Ready to test</small>
+        </div>
+      </div>
+
+      <!-- Credentials & Configuration -->
+      <div class="card">
+        <h2>External API & Credentials Configuration</h2>
+        <p style="font-size:0.88rem; color:var(--mute); margin-bottom:1rem;">Manage your CJ Dropshipping Published Key, External Supervisor ID, and Supabase integration endpoints.</p>
+        
+        <div class="grid-2">
+          <div>
+            <label for="cfg-cj-key">CJ Published Key (External API Key)</label>
+            <input id="cfg-cj-key" type="password" placeholder="Enter CJ API key...">
+          </div>
+          <div>
+            <label for="cfg-cj-supervisor">CJ Supervisor Email / User ID</label>
+            <input id="cfg-cj-supervisor" placeholder="e.g. supervisor@varele.com">
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <label for="cfg-sb-url">Supabase Project Base URL</label>
+            <input id="cfg-sb-url" readonly style="opacity:0.8">
+          </div>
+          <div>
+            <label for="cfg-sb-key">Supabase Publishable Key</label>
+            <input id="cfg-sb-key" readonly style="opacity:0.8">
+          </div>
+        </div>
+
+        <p style="margin-top:1.25rem; display:flex; gap:0.75rem;">
+          <button id="save-cfg">Save Credentials</button>
+          <button class="ghost" id="run-full-audit">Run Link & Speed Audit</button>
+        </p>
+        <div class="msg" id="cfg-msg" role="status"></div>
+      </div>
+
+      <!-- Diagnostic Console & Manual Test Suite -->
+      <div class="card">
+        <h2>Connection Test Suite & Live Logs</h2>
+        <p style="font-size:0.88rem; color:var(--mute); margin-bottom:1rem;">Run direct diagnostic pings to verify database access, API proxy health, and CJ authentication tokens.</p>
+        
+        <div style="display:flex; gap:0.75rem; margin-bottom: 1rem; flex-wrap:wrap;">
+          <button class="ghost" id="test-db">Test Supabase Connection</button>
+          <button class="ghost" id="test-cj">Test CJ Dropshipping API Link</button>
+          <button class="ghost" id="clear-log">Clear Diagnostic Log</button>
+        </div>
+
+        <div class="console-box" id="diag-console">-- Varèle Atelier Diagnostic Console Initialized --\nClick "Run Link & Speed Audit" or a test button above to verify pipeline connectivity.</div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script>
+const DEFAULT_URL = "https://hbejflabmnfvyvxltdxe.supabase.co";
+const DEFAULT_KEY = "sb_publishable_aO_8S0I1kq0IRerRNrDWoA_8gfbvbX_";
+
+let sbUrl = localStorage.getItem("varele_sb_url") || DEFAULT_URL;
+let sbKey = localStorage.getItem("varele_sb_key") || DEFAULT_KEY;
+let sb = supabase.createClient(sbUrl, sbKey);
+
+const $ = id => document.getElementById(id);
+const say = (el, text, cls) => { el.textContent = text; el.className = "msg " + (cls||""); };
+
+let currentTab = 'all';
+let recentlySyncedIds = new Set();
+
+// Load stored CJ Credentials
+$("cfg-cj-key").value = localStorage.getItem("varele_cj_key") || "";
+$("cfg-cj-supervisor").value = localStorage.getItem("varele_cj_supervisor") || "";
+$("cfg-sb-url").value = sbUrl;
+$("cfg-sb-key").value = sbKey;
+
+async function show(){
+  const { data:{ session } } = await sb.auth.getSession();
+  $("login").hidden = !!session; $("app").hidden = !session; $("out").hidden = !session;
+  if(session) {
+    load();
+    updateNetworkInfo();
+  }
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  $("tab-all").classList.toggle("active", tab === 'all');
+  $("tab-staged").classList.toggle("active", tab === 'staged');
+  $("tab-net").classList.toggle("active", tab === 'net');
+  
+  $("view-catalog").hidden = (tab === 'net');
+  $("view-net").hidden = (tab !== 'net');
+  
+  if (tab !== 'net') load();
+  else updateNetworkInfo();
+}
+
+function logDiag(text) {
+  const box = $("diag-console");
+  const time = new Date().toLocaleTimeString();
+  box.textContent += `\n[${time}] ${text}`;
+  box.scrollTop = box.scrollHeight;
+}
+
+$("clear-log").onclick = () => {
+  $("diag-console").textContent = "-- Varèle Atelier Diagnostic Console Cleared --";
+};
+
+// Network Speed Estimation
+function updateNetworkInfo() {
+  if (navigator.connection) {
+    const conn = navigator.connection;
+    $("val-net-speed").textContent = (conn.downlink || "--") + " Mbps";
+    $("txt-net-type").textContent = `Type: ${conn.effectiveType || "Unknown"} | RTT: ${conn.rtt || "--"}ms`;
+  } else {
+    $("val-net-speed").textContent = "N/A";
+    $("txt-net-type").textContent = "Network Information API unavailable";
+  }
+}
+
+// Supabase DB Ping Test
+async function runDbTest() {
+  logDiag("Starting Supabase Database ping test...");
+  const t0 = performance.now();
+  try {
+    const { data, error } = await sb.from("catalogues").select("id").limit(1);
+    const t1 = performance.now();
+    const latency = Math.round(t1 - t0);
+    
+    if (error) throw error;
+    
+    $("val-db-ping").textContent = latency + " ms";
+    $("dot-db").className = "metric-status online";
+    $("txt-db").textContent = "Operational (200 OK)";
+    logDiag(`✔ Supabase DB connected successfully in ${latency}ms.`);
+    return true;
+  } catch (err) {
+    $("val-db-ping").textContent = "ERR";
+    $("dot-db").className = "metric-status offline";
+    $("txt-db").textContent = "Connection failed";
+    logDiag(`❌ Supabase DB ping failed: ${err.message}`);
+    return false;
+  }
+}
+
+// CJ Edge Function Link Ping Test
+async function runCjTest() {
+  logDiag("Starting CJ Dropshipping Edge Function link test...");
+  const cjKey = $("cfg-cj-key").value.trim();
+  const cjSupervisor = $("cfg-cj-supervisor").value.trim();
+  
+  const t0 = performance.now();
+  try {
+    const { data, error } = await sb.functions.invoke("cj-sync", {
+      body: { 
+        ping: true,
+        cjApiKey: cjKey || undefined,
+        cjSupervisor: cjSupervisor || undefined
+      }
+    });
+    const t1 = performance.now();
+    const latency = Math.round(t1 - t0);
+
+    if (error) {
+      let detail = error.message;
+      try { const j = await error.context.json(); if (j.error) detail = j.error; } catch(e){}
+      throw new Error(detail);
+    }
+
+    $("val-cj-ping").textContent = latency + " ms";
+    $("dot-cj").className = "metric-status online";
+    $("txt-cj").textContent = "Connected";
+    logDiag(`✔ CJ Edge Function responded in ${latency}ms.`);
+    if (cjKey) logDiag(`  -> Using custom CJ Published Key: ${cjKey.substring(0, 6)}...`);
+    return true;
+  } catch (err) {
+    $("val-cj-ping").textContent = "ERR";
+    $("dot-cj").className = "metric-status offline";
+    $("txt-cj").textContent = "Edge Function Error";
+    logDiag(`⚠️ CJ Edge Function test response: ${err.message}`);
+    return false;
+  }
+}
+
+$("test-db").onclick = runDbTest;
+$("test-cj").onclick = runCjTest;
+
+// Comprehensive Audit
+$("run-full-audit").onclick = async () => {
+  say($("cfg-msg"), "Running link and latency audit...");
+  $("val-pipe-status").textContent = "Auditing...";
+  updateNetworkInfo();
+  
+  const dbOk = await runDbTest();
+  const cjOk = await runCjTest();
+
+  if (dbOk && cjOk) {
+    $("val-pipe-status").textContent = "Optimal";
+    $("txt-pipe-detail").textContent = "All links active";
+    say($("cfg-msg"), "All connection diagnostics passed successfully.", "ok");
+  } else if (dbOk) {
+    $("val-pipe-status").textContent = "Partial";
+    $("txt-pipe-detail").textContent = "DB ok, CJ warning";
+    say($("cfg-msg"), "Supabase connected. CJ link returned warnings.", "err");
+  } else {
+    $("val-pipe-status").textContent = "Offline";
+    $("txt-pipe-detail").textContent = "Pipeline degraded";
+    say($("cfg-msg"), "Connection errors detected. Check diagnostic logs.", "err");
+  }
+};
+
+// Save Credentials Configuration
+$("save-cfg").onclick = () => {
+  localStorage.setItem("varele_cj_key", $("cfg-cj-key").value.trim());
+  localStorage.setItem("varele_cj_supervisor", $("cfg-cj-supervisor").value.trim());
+  say($("cfg-msg"), "API credentials saved locally.", "ok");
+  logDiag("System credentials updated and stored.");
+};
+
+// Load Catalog Products
+async function load(){
+  const cats = (await sb.from("catalogues").select("id,name").order("name")).data || [];
+  const bc = $("bcat"); bc.innerHTML = "";
+  bc.append(new Option("Move to…", ""));
+  for(const c of cats) bc.append(new Option(c.name, c.id));
+
+  let query = sb.from("products").select("id,cj_pid,name,image_url,images,video_url,cost_price,sell_price,active,catalogue_id").order("created_at",{ascending:false}).limit(200);
+  
+  if (currentTab === 'staged') {
+    if (recentlySyncedIds.size === 0) {
+      $("list").innerHTML = '<p style="color:var(--mute); text-align:center; padding: 2rem;">No items have been synced during this session yet.</p>';
+      return;
+    }
+    query = query.in("id", Array.from(recentlySyncedIds));
+  }
+
+  const { data, error } = await query;
+  const box = $("list");
+  
+  if(error){ box.innerHTML = ""; const p=document.createElement("p"); p.className="err"; p.textContent=error.message; box.append(p); return; }
+  if(!data.length){ box.innerHTML = '<p style="color:var(--mute); text-align:center; padding: 2rem;">No items found.</p>'; return; }
+  
+  box.innerHTML = "";
+  for(const r of data){
+    const d = document.createElement("div"); d.className = "product-item";
+    const img = document.createElement("img"); img.alt = ""; if(r.image_url) img.src = r.image_url;
+    
+    const infoBox = document.createElement("div"); 
+    const b = document.createElement("div"); b.className = "product-title"; b.textContent = r.name;
+    
+    const meta = document.createElement("div"); meta.className = "product-meta";
+    const nImg = Array.isArray(r.images) ? r.images.length : 0;
+    meta.innerHTML = `<span>Cost: <strong>$${r.cost_price ?? "–"}</strong></span>` +
+                     `<span>Photos: <strong>${nImg}</strong></span>` +
+                     (r.video_url ? `<span class="badge">Video Included</span>` : "") +
+                     (!r.active ? `<span class="badge" style="background:#fee2e2; color:#991b1b">Hidden</span>` : "");
+                     
+    infoBox.append(b, meta);
+
+    const c = document.createElement("div"); c.className = "product-controls";
+    const sl = document.createElement("label"); sl.className = "check-label";
+    const sel = document.createElement("input"); sel.type = "checkbox"; sel.className = "sel"; sel.dataset.id = r.id; sel.dataset.pid = r.cj_pid || "";
+    sel.onchange = updateCount; sl.append(sel, " Select");
+
+    const price = document.createElement("input"); price.type = "number"; price.step = "0.01"; price.min = "0"; price.value = r.sell_price ?? "";
+    price.setAttribute("aria-label", "Selling price for " + r.name);
+
+    const vl = document.createElement("label"); vl.className = "check-label";
+    const vis = document.createElement("input"); vis.type = "checkbox"; vis.checked = r.active;
+    vl.append(vis, " Visible");
+
+    const cs = document.createElement("select"); cs.setAttribute("aria-label", "Catalogue for " + r.name);
+    cs.append(new Option("Uncategorized", ""));
+    for(const c of cats) cs.append(new Option(c.name, c.id));
+    cs.value = r.catalogue_id || "";
+
+    const save = document.createElement("button"); save.textContent = "Save Changes";
+    const del = document.createElement("button"); del.textContent = "Delete"; del.className = "ghost"; del.style.color = "var(--err)";
+    const note = document.createElement("span"); note.style.fontSize = "0.85rem";
+
+    save.onclick = async () => {
+      save.disabled = true;
+      const { error } = await sb.from("products").update({ sell_price: price.value === "" ? null : Number(price.value), active: vis.checked, catalogue_id: cs.value || null, updated_at: new Date().toISOString() }).eq("id", r.id);
+      save.disabled = false; note.textContent = error ? error.message : "Updated"; note.className = error ? "err" : "ok";
+      setTimeout(() => { note.textContent = ""; }, 3000);
+    };
+
+    del.onclick = async () => {
+      if(!confirm("Remove this product permanently?")) return;
+      const { error } = await sb.from("products").delete().eq("id", r.id);
+      if(error){ note.textContent = error.message; note.className = "err"; } else d.remove();
+    };
+
+    c.append(sl, price, cs, vl, save, del, note);
+    d.append(img, infoBox, c); box.append(d);
+  }
+  updateCount();
+}
+
+const picked = () => [...document.querySelectorAll(".sel:checked")].map(x => x.dataset.id);
+function updateCount(){
+  const all = document.querySelectorAll(".sel").length, n = picked().length;
+  $("selcount").textContent = n + " selected";
+  $("all").checked = all > 0 && n === all;
+}
+$("all").onchange = () => { document.querySelectorAll(".sel").forEach(x => x.checked = $("all").checked); updateCount(); };
+
+async function bulk(kind){
+  const ids = picked();
+  if(!ids.length) return say($("bmsg"), "Select products to perform batch actions.", "err");
+  if(kind === "delete" && !confirm("Permanently remove " + ids.length + " items?")) return;
+  say($("bmsg"), "Applying batch updates…");
+  if(kind === "move" && !$("bcat").value) return say($("bmsg"), "Specify target catalogue.", "err");
+  
+  const q = kind === "move" ? sb.from("products").update({ catalogue_id: $("bcat").value, updated_at: new Date().toISOString() }).in("id", ids)
+    : kind === "delete" ? sb.from("products").delete().in("id", ids)
+    : sb.from("products").update({ active: kind === "show", updated_at: new Date().toISOString() }).in("id", ids);
+    
+  const { error } = await q;
+  if(error) return say($("bmsg"), error.message, "err");
+  say($("bmsg"), `${ids.length} products successfully ${kind === "move" ? "re-assigned" : kind === "delete" ? "deleted" : kind === "show" ? "published" : "hidden"}.`, "ok");
+  $("all").checked = false; load();
+}
+
+$("bshow").onclick = () => bulk("show");
+$("bhide").onclick = () => bulk("hide");
+$("bdel").onclick = () => bulk("delete");
+$("bmove").onclick = () => bulk("move");
+
+async function fnError(error){
+  let detail = error.message;
+  try { const j = await error.context.json(); if(j.error) detail = j.error; } catch(e){}
+  return detail;
+}
+
+async function getDetails(pids, out){
+  const cjKey = $("cfg-cj-key").value.trim();
+  let done = 0, failed = 0, rounds = 0;
+  while(true){
+    const chunk = pids ? pids.slice(done + failed, done + failed + 8) : null;
+    if(pids && !chunk.length) break;
+    say(out, "Fetching rich media & details… " + done + " completed");
+    const { data, error } = await sb.functions.invoke("cj-product-details", { 
+      body: pids ? { pids: chunk, cjApiKey: cjKey || undefined } : { limit: 8, cjApiKey: cjKey || undefined } 
+    });
+    if(error){ say(out, await fnError(error), "err"); return; }
+    if(data.error){ say(out, data.error, "err"); return; }
+    done += data.enriched || 0; failed += (data.errors || []).length;
+    if(!pids && (!data.enriched || !data.remaining || ++rounds >= 12)) break;
+    if(pids && !data.enriched && !(data.errors || []).length) break;
+  }
+  say(out, `${done} products enriched with photos and videos.${failed ? ` (${failed} skipped)` : ""}`, failed && !done ? "err" : "ok");
+  load();
+}
+
+$("bdet").onclick = async () => {
+  const pids = [...document.querySelectorAll(".sel:checked")].map(x => x.dataset.pid).filter(Boolean);
+  if(!pids.length) return say($("bmsg"), "Select products to enrich.", "err");
+  const btn = $("bdet"); btn.disabled = true; await getDetails(pids, $("bmsg")); btn.disabled = false;
+};
+$("fill").onclick = async () => {
+  const btn = $("fill"); btn.disabled = true; await getDetails(null, $("smsg")); btn.disabled = false;
+};
+
+$("go").onclick = async () => {
+  say($("lmsg"), "Authenticating…");
+  const { error } = await sb.auth.signInWithPassword({ email: $("em").value.trim(), password: $("pw").value });
+  if(error) return say($("lmsg"), error.message, "err");
+  $("pw").value = ""; say($("lmsg"), ""); show();
+};
+$("out").onclick = async () => { await sb.auth.signOut(); show(); };
+
+$("sync").onclick = async () => {
+  if(!$("q").value.trim()) return say($("smsg"), "Please enter a search term.", "err");
+  const btn = $("sync"); btn.disabled = true; say($("smsg"), "Synchronizing items with CJ Dropshipping…");
+  
+  const cjKey = $("cfg-cj-key").value.trim();
+  const cjSupervisor = $("cfg-cj-supervisor").value.trim();
+
+  const { data, error } = await sb.functions.invoke("cj-sync", { 
+    body: { 
+      query: $("q").value.trim(), 
+      markup: Number($("mk").value) || 2, 
+      pageSize: Number($("n").value) || 20, 
+      page: Number($("pg").value) || 1, 
+      catalogue: $("cat").value.trim() || undefined,
+      cjApiKey: cjKey || undefined,
+      cjSupervisor: cjSupervisor || undefined
+    } 
+  });
+  btn.disabled = false;
+  if(error) return say($("smsg"), await fnError(error), "err");
+  if(data.error) return say($("smsg"), data.error, "err");
+  
+  if (data.insertedIds && Array.isArray(data.insertedIds)) {
+    data.insertedIds.forEach(id => recentlySyncedIds.add(id));
+    $("staged-count").textContent = recentlySyncedIds.size;
+    $("staged-count").hidden = false;
+  }
+
+  say($("smsg"), `Successfully synced ${data.added} new products and updated ${data.updated} in ${data.catalogue}.`, "ok");
+  switchTab('staged');
+};
+
+show();
+</script>
+</body>
+</html>

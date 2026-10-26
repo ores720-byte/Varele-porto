@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Varèle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<style>
+:root{--bg:#fff;--ink:#16161a;--mute:#76736d;--line:#e8e5e0;--soft:#f5f3f0;--navy:#1f2a44;--err:#a32a2a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "DM Sans",system-ui,sans-serif;padding-bottom:env(safe-area-inset-bottom,0)}
+h1,h2,.logo{font-family:"Cormorant Garamond",Georgia,serif;font-weight:600;margin:0}
+a{color:inherit}
+button{font:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
+
+.bar{background:var(--navy);color:#fff;text-align:center;font-size:.85rem;padding:.5rem 1rem}
+header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5}
+.logo{font-size:2rem;letter-spacing:.03em;line-height:1;text-decoration:none}
+#bagbtn{background:none;border:1px solid var(--line);padding:.5rem 1rem;border-radius:2px;color:var(--ink)}
+.crumb{max-width:1000px;margin:0 auto;padding:1rem 1.1rem 0}
+.crumb a{text-decoration:none;color:var(--mute);font-size:.95rem}
+@media(min-width:800px){.crumb{padding:1.2rem 1.5rem 0}}
+.btn{background:var(--navy);color:#fff;border:0;padding:.85rem 1.6rem;border-radius:2px;text-decoration:none;display:inline-block}
+#veil{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9}
+#drawer{position:fixed;top:0;right:0;bottom:0;width:min(420px,100%);background:var(--bg);z-index:10;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .25s;visibility:hidden}
+#drawer.open{transform:none;visibility:visible}
+@media(prefers-reduced-motion:reduce){#drawer{transition:none}}
+.dh{display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;border-bottom:1px solid var(--line)}
+.dh h2{margin:0;font-size:1.5rem}
+.dh button{background:none;border:0;font-size:1.6rem;color:var(--ink)}
+#items{flex:1;overflow:auto;padding:0 1.25rem}
+#items .empty{padding:1.2rem 0;text-align:left}
+.it{display:grid;grid-template-columns:56px 1fr auto;gap:.8rem;align-items:center;padding:.8rem 0;border-bottom:1px solid var(--line);font-size:.9rem}
+.it img{width:56px;height:56px;object-fit:cover;background:var(--soft)}
+.it small{color:var(--mute);display:block}
+.it button{background:none;border:0;color:var(--mute);text-decoration:underline;padding:0;font-size:.85rem}
+.df{padding:1.25rem;border-top:1px solid var(--line)}
+.tot{display:flex;justify-content:space-between;font-weight:500;margin-bottom:.8rem}
+.df small{color:var(--mute);display:block;margin-top:.6rem}
+[hidden]{display:none!important}
+
+main{max-width:1000px;margin:0 auto}
+.wrap{display:grid;grid-template-columns:1fr}
+.info{padding:1.4rem 1.1rem 3rem}
+@media(min-width:800px){.wrap{grid-template-columns:1.1fr 1fr;gap:3rem;padding:2rem 1.5rem}.info{padding:0}}
+
+/* gallery */
+.galbox{position:relative}
+.gal{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;background:var(--soft);aspect-ratio:1/1}
+.gal::-webkit-scrollbar{display:none}
+.slide{flex:0 0 100%;scroll-snap-align:center;display:flex;align-items:center;justify-content:center}
+.slide img,.slide video{width:100%;height:100%;object-fit:contain;background:var(--soft)}
+.count{position:absolute;right:.8rem;bottom:.8rem;background:var(--bg);color:var(--ink);font-size:.8rem;padding:.2rem .6rem;border:1px solid var(--line)}
+.nav{position:absolute;top:50%;transform:translateY(-50%);width:2.4rem;height:2.4rem;border:1px solid var(--line);background:var(--bg);color:var(--ink);display:none}
+.nav.l{left:.6rem}.nav.r{right:.6rem}
+@media(hover:hover) and (min-width:800px){.nav{display:block}}
+.thumbs{display:flex;gap:.5rem;overflow-x:auto;padding:.6rem 1.1rem}
+@media(min-width:800px){.thumbs{padding:.6rem 0}}
+.thumbs button{flex:0 0 56px;height:56px;padding:0;border:1px solid var(--line);background:var(--soft)}
+.thumbs button[aria-current=true]{border-color:var(--ink)}
+.thumbs img{width:100%;height:100%;object-fit:cover;display:block}
+
+/* info */
+.cat{color:var(--mute);font-size:.9rem;margin:0 0 .4rem}
+h1{font-size:2rem;line-height:1.2}
+.price{font-size:1.4rem;margin:.8rem 0 1.2rem}
+.lbl{display:block;font-size:.9rem;color:var(--mute);margin:1.1rem 0 .45rem}
+.opts{display:flex;flex-wrap:wrap;gap:.5rem}
+.opts button{padding:.55rem .9rem;background:transparent;color:var(--ink);border:1px solid var(--line);border-radius:2px}
+.opts button[aria-pressed=true]{border-color:var(--navy);background:var(--navy);color:var(--bg)}
+.qty{display:inline-flex;border:1px solid var(--line)}
+.qty button{width:2.6rem;height:2.6rem;border:0;background:transparent;color:var(--ink);font-size:1.2rem}
+.qty span{min-width:2.6rem;display:flex;align-items:center;justify-content:center}
+.buy{display:block;width:100%;margin-top:1.6rem;font:inherit;cursor:pointer;padding:1rem;border:1px solid var(--navy);background:var(--navy);color:var(--bg);border-radius:2px;text-align:center;text-decoration:none;font-weight:500}
+.fine{color:var(--mute);font-size:.88rem;margin:.7rem 0 0}
+.desc{border-top:1px solid var(--line);margin-top:2rem;padding-top:1.4rem}
+.desc h2{font-size:1.5rem;margin-bottom:.8rem}
+.body{overflow-wrap:anywhere}
+.body img{max-width:100%;height:auto;display:block;margin:.6rem 0}
+.body table{display:block;overflow-x:auto;border-collapse:collapse;max-width:100%}
+.body td,.body th{border:1px solid var(--line);padding:.35rem .6rem;text-align:left}
+.body ul,.body ol{padding-left:1.2rem}
+.empty{padding:3rem 1.1rem;color:var(--mute);text-align:center}
+.empty a{color:var(--navy)}
+@media(prefers-reduced-motion:no-preference){.gal{scroll-behavior:smooth}}
+</style>
+</head>
+<body>
+<div class="bar">Orders are confirmed by email within 24 hours</div>
+<header>
+  <a class="logo" id="home" href="varele-store.html">Varèle</a>
+  <button id="bagbtn" aria-label="Open bag">Bag (<span id="cnt">0</span>)</button>
+</header>
+<nav class="crumb"><a id="back" href="varele-store.html">‹ The collection</a></nav>
+<main id="root"><p class="empty">Loading…</p></main>
+
+<div id="veil" hidden></div>
+<aside id="drawer" aria-label="Your bag" aria-hidden="true">
+  <div class="dh"><h2>Your bag</h2><button id="close" aria-label="Close bag">×</button></div>
+  <div id="items"></div>
+  <div class="df">
+    <div class="tot"><span>Total</span><span id="total">$0.00</span></div>
+    <a class="btn" id="order" style="display:block;text-align:center" href="#">Send order by email</a>
+    <small>Your email app opens with the order filled in. We reply with an invoice.</small>
+  </div>
+</aside>
+
+<script>
+const sb = supabase.createClient("https://hbejflabmnfvyvxltdxe.supabase.co","sb_publishable_aO_8S0I1kq0IRerRNrDWoA_8gfbvbX_");
+const root = document.getElementById("root");
+const STORE = "varele-store.html"; // the filename of your storefront page
+
+// Same bag as the storefront (shared through the browser), opened right on this page
+function readBag(){ try { return JSON.parse(localStorage.getItem("varele-bag") || "[]"); } catch(e){ return []; } }
+let bag = readBag();
+function saveBag(){ try { localStorage.setItem("varele-bag", JSON.stringify(bag)); return true; } catch(e){ return false; } }
+function putInBag(item){
+  bag = readBag();
+  const f = bag.find(i => i.id === item.id);
+  if(f) f.qty += item.qty; else bag.push(item);
+  return saveBag();
+}
+function drawBag(){
+  document.getElementById("cnt").textContent = bag.reduce((s, i) => s + i.qty, 0);
+  const box = document.getElementById("items"); box.replaceChildren();
+  if(!bag.length) box.append(el("p", "empty", "Your bag is empty."));
+  for(const i of bag){
+    const img = document.createElement("img"); img.alt = ""; if(i.image) img.src = i.image;
+    const rm = el("button", "", "Remove"); rm.onclick = () => { bag = bag.filter(x => x !== i); saveBag(); drawBag(); };
+    const mid = el("div"); const rmw = el("div"); rmw.append(rm);
+    mid.append(el("div", "", i.name), el("small", "", i.qty + " × " + money(i.price)), rmw);
+    const row = el("div", "it"); row.append(img, mid, el("div", "", money(i.qty * i.price)));
+    box.append(row);
+  }
+  const total = bag.reduce((s, i) => s + i.qty * i.price, 0);
+  document.getElementById("total").textContent = money(total);
+  const body = "Hello Varèle,\n\nI would like to order:\n\n" + bag.map(i => i.qty + " × " + i.name + " — " + money(i.qty * i.price)).join("\n") + "\n\nTotal: " + money(total) + "\n\nName:\nDelivery address:\nPhone:\n";
+  document.getElementById("order").href = bag.length ? "mailto:orders@varele.com?subject=" + encodeURIComponent("New order") + "&body=" + encodeURIComponent(body) : "#";
+}
+let lastFocus = null;
+function openBag(){
+  lastFocus = document.activeElement;
+  document.getElementById("drawer").classList.add("open"); document.getElementById("drawer").setAttribute("aria-hidden", "false");
+  document.getElementById("veil").hidden = false; document.getElementById("close").focus();
+}
+function closeBag(){
+  document.getElementById("drawer").classList.remove("open"); document.getElementById("drawer").setAttribute("aria-hidden", "true");
+  document.getElementById("veil").hidden = true; if(lastFocus) lastFocus.focus();
+}
+document.getElementById("bagbtn").onclick = openBag;
+document.getElementById("close").onclick = closeBag;
+document.getElementById("veil").onclick = closeBag;
+document.addEventListener("keydown", e => { if(e.key === "Escape") closeBag(); });
+window.addEventListener("pageshow", e => { if(e.persisted){ bag = readBag(); drawBag(); } });
+const money = n => "$" + Number(n).toFixed(2);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; };
+
+// Back goes to wherever the shopper came from; falls back to the store front page
+document.getElementById("back").onclick = e => { if(history.length > 1 && document.referrer){ e.preventDefault(); history.back(); } };
+document.getElementById("back").href = STORE;
+document.getElementById("home").href = STORE;
+
+function notFound(msg){
+  root.innerHTML = "";
+  const p = el("p", "empty", msg + " ");
+  const a = el("a", "", "Back to the store"); a.href = STORE;
+  p.append(a); root.append(p);
+}
+
+// CJ descriptions are raw HTML. Keep simple text, lists, tables and https photos; drop everything else.
+const ALLOW = new Set("P BR UL OL LI STRONG B EM I U H1 H2 H3 H4 H5 H6 TABLE THEAD TBODY TR TD TH SPAN DIV".split(" "));
+const DROP = new Set("SCRIPT STYLE IFRAME OBJECT EMBED FORM LINK META NOSCRIPT SVG VIDEO AUDIO".split(" "));
+function clean(html){
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const out = document.createDocumentFragment();
+  (function walk(src, dst){
+    for(const n of [...src.childNodes]){
+      if(n.nodeType === 3){ dst.append(document.createTextNode(n.nodeValue)); continue; }
+      if(n.nodeType !== 1 || DROP.has(n.tagName)) continue;
+      if(n.tagName === "IMG"){
+        const u = n.getAttribute("src") || n.getAttribute("data-src") || "";
+        if(/^https:\/\//i.test(u)){ const im = document.createElement("img"); im.src = u; im.alt = ""; im.loading = "lazy"; dst.append(im); }
+        continue;
+      }
+      if(ALLOW.has(n.tagName)){ const e = document.createElement(n.tagName.toLowerCase()); walk(n, e); dst.append(e); }
+      else walk(n, dst);
+    }
+  })(doc.body, out);
+  return out;
+}
+
+function toList(v){
+  if(!v) return [];
+  if(Array.isArray(v)) return v.map(String).filter(Boolean);
+  const s = String(v).trim();
+  if(s.startsWith("[")){ try { return JSON.parse(s).map(String).filter(Boolean); } catch(e){} }
+  return [];
+}
+
+function render(p){
+  document.title = p.name + " · Varèle";
+  const photos = [...new Set([...(toList(p.images)), ...(p.image_url ? [p.image_url] : [])])].filter(u => /^https?:\/\//i.test(u));
+  const video = p.video_url && /^https?:\/\//i.test(p.video_url) ? p.video_url : null;
+
+  // Variants saved from CJ (sizes, colours); each may have its own photo and price
+  const raw = p.raw || {};
+  const seen = new Set();
+  const variants = (Array.isArray(raw.variants) ? raw.variants : []).map(v => ({
+    label: v.variantNameEn || v.variantKey || v.variantSku || "",
+    image: v.variantImage || null,
+    cost: v.variantSellPrice != null ? Number(v.variantSellPrice) : null
+  })).filter(v => v.label && !seen.has(v.label) && seen.add(v.label));
+  const ratio = (p.sell_price != null && p.cost_price) ? Number(p.sell_price) / Number(p.cost_price) : null;
+  let chosen = variants.length === 1 ? variants[0] : null;
+  let qty = 1;
+
+  root.innerHTML = "";
+  const wrap = el("div", "wrap");
+
+  // Gallery: swipe on a phone, arrows on a computer
+  const left = el("div");
+  const box = el("div", "galbox");
+  const gal = el("div", "gal"); gal.tabIndex = 0; gal.setAttribute("aria-label", "Product photos and video");
+  const slides = photos.length || video ? [] : [null];
+  for(const u of photos){ const s = el("div", "slide"); const im = document.createElement("img"); im.src = u; im.alt = p.name; im.loading = slides.length ? "lazy" : "eager"; s.append(im); gal.append(s); slides.push(u); }
+  if(video){ const s = el("div", "slide"); const v = document.createElement("video"); v.src = video; v.controls = true; v.playsInline = true; v.preload = "metadata"; if(photos[0]) v.poster = photos[0]; s.append(v); gal.append(s); slides.push(video); }
+  if(!photos.length && !video){ const s = el("div", "slide"); s.append(el("span", "fine", "No photo yet")); gal.append(s); }
+  const total = Math.max(slides.length, 1);
+  const count = el("span", "count", "1 / " + total); count.setAttribute("aria-live", "polite");
+  box.append(gal);
+  if(total > 1){
+    box.append(count);
+    const go = d => gal.scrollBy({ left: d * gal.clientWidth });
+    const l = el("button", "nav l", "‹"); l.setAttribute("aria-label", "Previous"); l.onclick = () => go(-1);
+    const r = el("button", "nav r", "›"); r.setAttribute("aria-label", "Next"); r.onclick = () => go(1);
+    box.append(l, r);
+  }
+  left.append(box);
+
+  const thumbs = el("div", "thumbs");
+  const tbtns = [];
+  if(total > 1){
+    slides.forEach((u, i) => {
+      const b = el("button"); b.setAttribute("aria-label", "Show " + (u === video ? "video" : "photo " + (i + 1)));
+      const t = document.createElement("img"); t.alt = ""; t.src = u === video ? (photos[0] || "") : u; t.loading = "lazy"; b.append(t);
+      b.onclick = () => gal.scrollTo({ left: i * gal.clientWidth });
+      thumbs.append(b); tbtns.push(b);
+    });
+    left.append(thumbs);
+  }
+  const mark = () => {
+    const i = Math.round(gal.scrollLeft / Math.max(gal.clientWidth, 1));
+    count.textContent = (i + 1) + " / " + total;
+    tbtns.forEach((b, k) => b.setAttribute("aria-current", k === i));
+  };
+  gal.addEventListener("scroll", () => requestAnimationFrame(mark)); mark();
+
+  // Info column
+  const info = el("div", "info");
+  if(p.category) info.append(el("p", "cat", p.category));
+  info.append(el("h1", "", p.name));
+  const price = el("p", "price");
+  const showPrice = () => {
+    let n = p.sell_price;
+    if(chosen && chosen.cost != null && ratio) n = Math.round(chosen.cost * ratio * 100) / 100;
+    price.textContent = n != null ? money(n) : "Ask for price";
+    return n;
+  };
+  showPrice(); info.append(price);
+
+  let optBtns = [];
+  if(variants.length > 1){
+    info.append(el("span", "lbl", "Choose an option"));
+    const opts = el("div", "opts"); opts.setAttribute("role", "group");
+    for(const v of variants){
+      const b = el("button", "", v.label); b.setAttribute("aria-pressed", "false");
+      b.onclick = () => {
+        chosen = v; optBtns.forEach(x => x.setAttribute("aria-pressed", x === b));
+        showPrice(); buy.removeAttribute("aria-disabled");
+        const i = v.image ? slides.indexOf(v.image) : -1;
+        if(i >= 0) gal.scrollTo({ left: i * gal.clientWidth });
+        buyUpdate();
+      };
+      optBtns.push(b); opts.append(b);
+    }
+    info.append(opts);
+  }
+
+  info.append(el("span", "lbl", "Quantity"));
+  const q = el("div", "qty"); const minus = el("button", "", "−"); const num = el("span", "", "1"); const plus = el("button", "", "+");
+  minus.setAttribute("aria-label", "Fewer"); plus.setAttribute("aria-label", "More");
+  minus.onclick = () => { qty = Math.max(1, qty - 1); num.textContent = qty; buyUpdate(); };
+  plus.onclick = () => { qty = Math.min(99, qty + 1); num.textContent = qty; buyUpdate(); };
+  q.append(minus, num, plus); info.append(q);
+
+  // Adds to the same bag as the storefront; the order itself is sent by email from the bag
+  const buy = el("button", "buy", "Add to bag");
+  const hint = "Orders are sent by email from your bag. We reply with an invoice.";
+  const say = el("p", "fine", hint);
+  const buyUpdate = () => { showPrice(); };
+  buy.onclick = () => {
+    if(variants.length > 1 && !chosen){ say.textContent = "Please choose an option first."; return; }
+    const n = showPrice();
+    if(n == null){ say.textContent = "This piece has no price yet. Email orders@varele.com to ask."; return; }
+    const ok = putInBag({
+      id: chosen && variants.length > 1 ? p.id + "::" + chosen.label : p.id,
+      name: chosen && variants.length > 1 ? p.name + " (" + chosen.label + ")" : p.name,
+      price: n, image: (chosen && chosen.image) || photos[0] || null, qty
+    });
+    drawBag();
+    if(!ok){ say.textContent = "Your browser would not save the bag. Please allow site storage and try again."; return; }
+    say.textContent = hint;
+    openBag();
+  };
+  info.append(buy, say);
+  buyUpdate();
+
+  // Full description
+  const frag = p.description ? clean(p.description) : null;
+  if(frag && frag.textContent.trim().length + frag.querySelectorAll("img").length){
+    const d = el("section", "desc"); d.append(el("h2", "", "Details"));
+    const b = el("div", "body"); b.append(frag); d.append(b); info.append(d);
+  }
+
+  wrap.append(left, info); root.append(wrap);
+}
+
+drawBag();
+
+(async () => {
+  const id = new URLSearchParams(location.search).get("id");
+  if(!id) return notFound("No product selected.");
+  const { data, error } = await sb.from("products")
+    .select("id,name,description,image_url,images,video_url,category,cost_price,sell_price,raw")
+    .eq("id", id).eq("active", true).maybeSingle();
+  if(error) return notFound("We could not load this product.");
+  if(!data) return notFound("This product is not available.");
+  render(data);
+})();
+</script>
+</body>
+</html>
